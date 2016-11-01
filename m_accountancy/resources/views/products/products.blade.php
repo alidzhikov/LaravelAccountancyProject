@@ -9,6 +9,7 @@
             <th>Тип</th>
             <th>Размер</th>
             <th>Цена</th>
+            <th>В наличност</th>
 
         </tr>
 
@@ -18,6 +19,7 @@
                 <td><a href="{{ url('products/' . $product->id . '/edit') }}"> {{ $product->type }}</a></td>
                 <td>{{ $product->size }}</td>
                 <td>{{ $product->price }}</td>
+                <td>{{ number_format($product->quantity, 0, ' ', ' ') }}</td>
             </tr>
         @endforeach
     </table>

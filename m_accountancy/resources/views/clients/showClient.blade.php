@@ -16,13 +16,16 @@
                 <td>{{ $data['client']->ein}}</td>
                 <td>{{ $data['client']->phone_number }}</td>
                 <td>{{ $data['client']->email }}</td>
+                <td>
+                    <a href="{{ url('clients/' . $data['client']->id . '/edit' ) }}">
+                        <button>Редактирай</button>
+                    </a>
+                </td>
             </tr>
 
     </table>
     <h1>Всички поръчки на {{ $data['client']->name }}</h1>
-    <a href="{{ url('clients/' . $data['client']->id . '/edit' ) }}">
-        <button>Редактирай</button>
-    </a><br />
+
 
     <table class="table table-hover">
         <td>Заглавие</td>

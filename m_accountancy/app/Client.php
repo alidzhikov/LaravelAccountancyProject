@@ -22,4 +22,14 @@ class Client extends Model
         'phone_number',
         'email'
     ];
+
+    public static function get_clients_arr()
+    {
+        $clients = Client::All();
+        $client_arr = array();
+        foreach($clients as $client){
+            $client_arr[$client->id] = $client->name;
+        }
+        return $client_arr;
+    }
 }

@@ -8,6 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Product;
 use Auth;
 use DB;
+use App\Price;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Session;
 
 class ProductsController extends Controller
 {
@@ -58,15 +61,16 @@ class ProductsController extends Controller
         $product = new Product();
         $product->type = $newProduct['type'];
         $product->user_id = Auth::user()->id;
+        $product->size = $newProduct['size'];
+        $product->quantity = $newProduct['quantity'];
         $product->save();
 
         $price = new Price();
         $price->product_id = $product->id;
-        $price->size = $newProduct['size'];
         $price->price = $newProduct['price'];
         $price->start = Carbon::now();
         $price->save();
-
+        //return $price;
         return redirect('/products');
     }
 
@@ -114,15 +118,16 @@ class ProductsController extends Controller
         $product = Product::find($id);
         $product->type = $newProduct['type'];
         $product->size = $newProduct['size'];
+        $product->quantity = $newProduct['quantity'];
         $product->user_id = Auth::user()->id;
         $product->save();
 
-        $price = Price::find($id);
-        $price->product_id = $product->id;
+        $price = Price::Where('product_id',$id)->first();
+        //$price->product_id = $product->id;
         $price->price = $newProduct['price'];
         $price->start = Carbon::now();
         $price->save();
-
+        Session::flash('flash_message',"Продуктът беше успешно редактиран.");
         return redirect('/products');
     }
 
@@ -134,6 +139,13 @@ class ProductsController extends Controller
      */
     public function destroy($id)
     {
-        //
+        //to do must be removed from the transaction
+//        $product = Product::find($id);
+//        $prices = Price::Where('product_id',$id);
+//        foreach($prices as $price ){
+//
+//        }
+
+
     }
 }

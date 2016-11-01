@@ -3,11 +3,21 @@
 @section('container')
  {{--var_dump($data['client'][0]['name']); --}}
     <h1> Ценова разписка {{$data['transaction']->title }} от
-        {{ $data['user']->name }} за  {{ $data['client']->name }}</h1>
-  <a href="{{ url('transaction/' . $data["transaction"]->id . '/edit' ) }}"><button>Редактирай</button></a><br />
- {!! Form::open(array('route' => array('transaction.destroy', $data["transaction"]->id), 'method' => 'delete')) !!}
- <button type="submit" > Изтрий </button>
- {!! Form::close() !!}
+        {{ $data['user']->name }} за  <a href="{{ url('clients/' . $data['client']->id) }}">{{ $data['client']->name }}</a></h1>
+ <p color="green">Коментари: {{ $data['transaction']->comment }} </p>
+
+ @if($data['transaction']->trashed())
+
+     {!! Form::open(array('route' => array('transaction.restore', $data["transaction"]->id), 'method' => 'PATCH')) !!}
+     <button type="submit" > Възстанови </button>
+     {!! Form::close() !!}
+ @else
+     <a href="{{ url('transaction/' . $data["transaction"]->id . '/edit' ) }}"><button>Редактирай</button></a><br />
+     {!! Form::open(array('route' => array('transaction.destroy', $data["transaction"]->id), 'method' => 'delete')) !!}
+     <button type="submit" > Изтрий </button>
+     {!! Form::close() !!}
+ @endif
+
 
  @if($data["transaction"]->created_at != $data["transaction"]->updated_at)
 

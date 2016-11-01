@@ -12,6 +12,9 @@
 
     {!! Form::label('price','Цена') !!}
     {!! Form::text('price','Цена', ['class' => 'form-control']) !!}
+
+    {!! Form::label('quantity','Складова наличност') !!}
+    {!! Form::text('quantity','Складова наличност', ['class' => 'form-control']) !!}
     <br/>
     <div class="form-group">
         {!! Form::submit('Добави продукт', ['class' => 'btn btn-primary form-control']) !!}

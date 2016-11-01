@@ -4,9 +4,11 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 use DB;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'transaction_id',
         'amount',
@@ -14,6 +16,7 @@ class Order extends Model
         'price'
     ];
     protected $table = 'orders';
+    protected $dates = ['deleted_at'];
     public function scopePublished($query)
     {
         $query->where('published_at', '<=', Carbon::now() );

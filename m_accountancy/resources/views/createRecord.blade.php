@@ -27,9 +27,13 @@
             {{--{!! Form::text('price[]',$product->price,['class' => 'form-control']) !!}--}}
         {{--</div>--}}
     {{--@endforeach--}}
+    <div class="input-wrapper">Вид</div>
+    <div class="input-wrapper">Брой</div>
+    <div class="input-wrapper">Цена(без ДДС)</div>
+    <div class="products1 form-group products-group">
 
-    <div class="form-group products-group products">
         <div class="input-wrapper">
+
             <select name="type[]" class="slctdPrdct">
                 <option value="" price="няма">избери продукт</option>
                 @foreach($data['products'] as $product)
@@ -39,9 +43,10 @@
                 @endforeach
             </select>
         </div>
+
         <div class="input-wrapper">
-            {!! Form::text('amount[]', 0, ['class' => 'form-control']) !!}
-            <div class="unit">броя</div>
+            {!! Form::number('amount[]', 0, ['class' => 'form-control', 'step' => 50]) !!}
+
         </div>
         <div class="input-wrapper">
 
@@ -52,13 +57,6 @@
     </div>
 
     <span class="btn btn-primary add_new">Друг продукт</span>
-
-
-
-
-
-
-
 
     {{--asdasd--}}
 

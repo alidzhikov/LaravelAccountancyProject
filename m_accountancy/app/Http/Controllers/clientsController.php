@@ -9,9 +9,14 @@ use App\Client;
 use App\Order;
 use Auth;
 use DB;
+use App\Transaction;
 
 class clientsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
     /**
      * Display a listing of the resource.
      *
@@ -19,7 +24,9 @@ class clientsController extends Controller
      */
     public function index()
     {
-        $clients = Client::All();
+        $user = Auth::user();
+        $clients = Client::where('user_id',$user->id)
+            ->get();
         $percentages = Order::selling_percentages();
         $data = array(
             'clients' => $clients,
@@ -68,18 +75,14 @@ class clientsController extends Controller
      */
     public function show($id)
     {
-        $client = Client::findOrFail($id);
         $user = Auth::user();
+        $client = Client::where('user_id',$user->id)
+            ->findOrFail($id);
 
-        $transactions= DB::table('transactions')
-            ->where('transactions.client_id','=',$id)
-            ->where('transactions.user_id','=',$user->id)
-            ->orderBy('id','desc')
-            ->join('users','transactions.user_id','=','users.id')
-            ->join('clients','transactions.client_id','=','clients.id')
-            ->select('transactions.*','users.name','clients.name')
-            ->get();
-
+        $transactions= Transaction::retrieve_transactions($client->id);
+        if($transactions == null){
+            //return redirect('/clients');
+        }
         $data = array(
             'client' => $client,
             'transactions' => $transactions
@@ -110,8 +113,8 @@ class clientsController extends Controller
     public function update(Request $request, $id)
     {
         $updatedVal = $request->all();
-
-        $client = Client::findOrFail($id);
+        $user = Auth::user();
+        $client = Client::where('user_id',$user->id)->findOrFail($id);
         $client->name = $updatedVal['name'];
         $client->organization_name = $updatedVal['organization_name'];
         $client->phone_number = $updatedVal['phone_number'];
@@ -131,7 +134,7 @@ class clientsController extends Controller
     public function destroy($id)
     {
         $client = Client::find($id);
-        $client->delete();
+        //$client->delete();
 
         return redirect('/clients');
     }

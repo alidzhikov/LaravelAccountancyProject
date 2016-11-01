@@ -12,9 +12,6 @@
 */
 Route::get('/', 'createNewRecordController@index');
 Route::get('home', 'createNewRecordController@index');
-//Route::post('order/store','createNewRecordController@store');
-//Route::get('order/create', 'createNewRecordController@create');
-//Route::post('order/show','createNewRecordController@show');
 
 // Authentication routes...
 Route::get('auth/login', 'Auth\AuthController@getLogin');
@@ -25,12 +22,24 @@ Route::get('auth/logout', 'Auth\AuthController@getLogout');
 Route::get('auth/register', 'Auth\AuthController@getRegister');
 Route::post('auth/register', 'Auth\AuthController@postRegister');
 
+Route::get('transaction/trash', 'createNewRecordController@trashed');
+Route::patch('transaction/{id}/restore', ['as' => 'transaction.restore','uses' => 'createNewRecordController@restore']);
+
 Route::resource('transaction', 'createNewRecordController');
 Route::post('transaction/store', 'createNewRecordController@store');
 
 Route::resource('clients','clientsController');
 
 Route::resource('products','ProductsController');
+
+Route::resource('prices', 'PricesController');
+
+Route::get('stats/getClientAmounts', ['as' => 'stats/getClientAmounts' , 'uses' => 'StatsController@getClientAmounts']);
+Route::get('stats/getTotalSums', ['as' => 'stats/getTotalSums' , 'uses' => 'StatsController@getTotalSums']);
+Route::get('stats/clientsProducts', ['as' => 'stats/clientsProducts' , 'uses' => 'StatsController@clientsProducts']);
+Route::get('stats/productSales', ['as' => 'stats/productSales' , 'uses' => 'StatsController@productSales']);
+Route::get('stats', 'StatsController@index');
+
 
 Route::get('gainz',['middleware' => 'manager',function(){
    return 'This page can only be viewed by managers who are managers because they have all kinds of gainzZzZz';

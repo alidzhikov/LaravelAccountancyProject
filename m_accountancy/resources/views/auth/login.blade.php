@@ -22,9 +22,11 @@
     </div>
 
     <div class="form-group">
-        <button type="submit" class="form-control">Login</button>
+        <button type="submit" class="btn btn-primary form-control">Login</button>
     </div>
 
 {!! Form::close() !!}
+
+No registration?<a href="{{url('auth/register')}}"> Register here!</a>
 
 @stop()

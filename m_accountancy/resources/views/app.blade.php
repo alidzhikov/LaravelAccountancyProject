@@ -13,6 +13,7 @@
 
     <!-- add new product-->
     <script src="{{ URL::asset('js/add_product.js') }}"></script>
+    @yield('meta-tags')
     <style>
         html, body {
             height: 100%;
@@ -66,6 +67,7 @@
             top: -27px;
             color:#999;
             width: 10px;
+
         }
         .add_new{
             margin: 10px 0 25px 0;
@@ -86,6 +88,11 @@
             font-family: 'verdana';
             font-size: 15px;
         }
+        .stats{
+            display: inline-table;
+            width:65%;
+        }
+
 
     </style>
 </head>
@@ -95,13 +102,26 @@
         <li><a href="{{ url('transaction') }}">Начало</a> </li>
         <li><a href="{{ url('clients') }}">Клиенти</a> </li>
         <li><a href="{{ url('products') }}">Продукти</a> </li>
+        <li><a href="{{ url('stats') }}">Статистики</a> </li>
     </ul>
 
 </header>
 <div class="container">
     @if (Session::has('flash_message'))
-
         <div class="alert alert-success">{{ Session::get('flash_message') }}</div>
+    @elseif(Session::has('error_message'))
+        <div class="alert alert-danger">
+
+            @foreach(Session::get('error_message')->toArray() as $msg)
+            {{ $msg }}<br/>
+            @endforeach
+        </div>
+    @elseif(Session::has('warning-message'))
+        <div class="alert alert-warning">
+            @foreach(Session::get('warning_message')->toArray() as $msg)
+                {{ $msg }}<br/>
+            @endforeach
+        </div>
     @endif
     @yield('container')
 </div>

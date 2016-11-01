@@ -15,6 +15,7 @@ use Auth;
 use DB;
 use App\Client;
 use Session;
+use App\CustomClasses\Validation\Validator;
 class CreateNewRecordController extends Controller
 {
     public function __construct()
@@ -29,10 +30,8 @@ class CreateNewRecordController extends Controller
      */
     public function index()
     {
-
         $user = Auth::user();
-        $transactions= DB::table('transactions')
-                    ->orderBy('id','desc')
+        $transactions= Transaction::orderBy('id','desc')
                     ->join('users','transactions.user_id','=','users.id')
                     ->join('clients','transactions.client_id','=','clients.id')
                     ->select('transactions.*','users.name','clients.name')
@@ -40,7 +39,31 @@ class CreateNewRecordController extends Controller
 
         $data = array(
             'user' => $user,
-            'transactions' => $transactions
+            'transactions' => $transactions,
+            'title' => 'Вашите поръчки'
+        );
+        return view('orders')->with('data', $data);
+    }
+
+    /**
+     * Display a listing of the soft deleted resources.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function trashed()
+    {
+        $user = Auth::user();
+        $transactions= Transaction::onlyTrashed()
+            ->orderBy('id','desc')
+            ->join('users','transactions.user_id','=','users.id')
+            ->join('clients','transactions.client_id','=','clients.id')
+            ->select('transactions.*','users.name','clients.name')
+            ->get();
+
+        $data = array(
+            'user' => $user,
+            'transactions' => $transactions,
+            'title' => 'Изтрити поръчки'
         );
         return view('orders')->with('data', $data);
     }
@@ -57,7 +80,7 @@ class CreateNewRecordController extends Controller
                 ->select('products.*','prices.price')
                 ->get();
 
-        $client_arr = $this->get_clients_arr();
+        $client_arr = Client::get_clients_arr();
         $data = array(
             'products' => $products,
             'clients' => $client_arr
@@ -74,11 +97,17 @@ class CreateNewRecordController extends Controller
      */
     public function store(Requests\OrdersRequest $request)
     {
-        $insertVal = $request->all();
+        $validTransaction = Validator::validateTransaction( $request->all() );
+        $insertVal = Validator::validateOrders( $validTransaction ) ;
         //return $insertVal;
+        if(isset($insertVal['error'])){
+            Session::flash('error_message', collect($insertVal['error']));
+            return redirect('/transaction/create');
+        }
         $num_products = count($insertVal['type']);
 
         $transaction = new Transaction;
+
         $transaction->user_id = $request->user()->id;
         $transaction->client_id = $insertVal['client_id'];
         $transaction->title = $insertVal['title'];
@@ -93,51 +122,24 @@ class CreateNewRecordController extends Controller
             if($insertVal['amount'][$i] <= 0){
                 continue;
             }
-            if($insertVal['type'][$i] =='' )
+            if($insertVal['type'][$i] == '' )
             {
                 continue;
             }
+            //metod to subtract the amount from product quantity
+
             $order['product_id'] = $insertVal['type'][$i];
             $order['amount'] = $insertVal['amount'][$i];
             $order['price'] = $insertVal['price'][$i];
             $order['transaction_id'] = $transaction->id;
+            Product::subtractAmount($order);
             Order::create($order);
         }
         Session::flash('flash_message', 'Вашата поръчка е запазена!');
-        //return $order;
+        //return $insertVal;
         return redirect('/transaction');
     }
 
-    public function get_clients_arr()
-    {
-        $clients = Client::All();
-        $client_arr = array();
-        foreach($clients as $client){
-            $client_arr[$client->id] = $client->name;
-        }
-        return $client_arr;
-    }
-
-    public function retrieve_transaction($id){
-
-        $transaction = Transaction::findOrFail($id);
-        $client_id = $transaction->client_id;
-
-        $orders = Order::where('transaction_id',$transaction->id)
-            ->join('products','orders.product_id', '=', 'products.id')
-            ->select('orders.*','products.type','products.size')
-            ->get();
-
-        //$client = Client::where('id',$transaction->client_id)->get();
-        $client = Client::findOrFail($client_id);
-        $data = array(
-            'transaction' => $transaction,
-            'orders' => $orders,
-            'client' => $client,
-            'user' => Auth::user()
-        );
-        return $data;
-    }
 
     /**
      * Display the specified resource.
@@ -147,7 +149,7 @@ class CreateNewRecordController extends Controller
      */
     public function show($id)
     {
-        $data = $this->retrieve_transaction($id);
+        $data = Transaction::retrieve_transaction($id);
         return view('show')->with('data', $data);
     }
 
@@ -159,8 +161,8 @@ class CreateNewRecordController extends Controller
      */
     public function edit($id)
     {
-        $data = $this->retrieve_transaction($id);
-        $client_arr = $this->get_clients_arr();
+        $data = Transaction::retrieve_transaction($id);
+        $client_arr = Client::get_clients_arr();
         $data['client'] = $client_arr;
         return view('edit')->with('data', $data);
     }
@@ -174,7 +176,7 @@ class CreateNewRecordController extends Controller
      */
     public function update(Requests\OrdersRequest $request, $id)
     {
-       //return $request->all();
+       //if amount is 0 delete the order
         $insertVal = $request->all();
 
         $transaction = Transaction::findOrFail($id);
@@ -185,11 +187,9 @@ class CreateNewRecordController extends Controller
         $transaction->save();
 
         $num_products = count($insertVal['type']);
-
         //
         $order = array();
         $order['_token'] = $insertVal['_token'];
-
 
         for($i = 0; $i<$num_products; $i++)
         {
@@ -215,6 +215,40 @@ class CreateNewRecordController extends Controller
     }
 
     /**
+     * Restore the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function restore($id)
+    {
+        $transaction = Transaction::withTrashed()
+            ->find($id);
+        $matches = ['transaction_id' => $transaction->id];
+        $orders = Order::withTrashed()
+            ->where($matches)->get();
+        foreach($orders as $order){
+            $order->restore();
+        }
+        $transaction->restore();
+
+        //move this into another function
+        foreach($orders as $order){
+            $product = Product::where('id',$order->product_id)->first();
+            $product->quantity = $product->quantity - $order->amount;
+            Validator::validateProduct($product);
+            if($product->error){
+                Session::flash('warning_message','Недостатъчно количество продукти!');
+            }
+            $product->save();
+        }
+
+        Session::flash('flash_message','Поръчката беше успешно възстановена!');
+        return redirect('/transaction');
+    }
+
+
+    /**
      * Remove the specified resource from storage.
      *
      * @param  int  $id
@@ -222,12 +256,22 @@ class CreateNewRecordController extends Controller
      */
     public function destroy($id)
     {
-
         $transaction = Transaction::find($id);
         $matches = ['transaction_id' => $transaction->id];
-        $order = Order::where($matches)->delete();
-        $transaction->delete();
+        $orders = Order::where($matches)->get();
+            //->delete();
+        //move this into another function
+        foreach($orders as $order){
+            $product = Product::where('id',$order->product_id)->first();
+            $product->quantity = $product->quantity + $order->amount;
 
+            $product->save();
+        }
+        foreach($orders as $order){
+            $order->delete();
+        }
+        $transaction->delete();
+        Session::flash('flash_message','Поръчката беше успешно изтрита!');
         return redirect('/transaction');
     }
 }
